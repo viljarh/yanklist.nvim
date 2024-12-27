@@ -1,0 +1,1 @@
+require("yanklist").setup()
