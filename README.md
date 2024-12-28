@@ -6,6 +6,7 @@ Neovim plugin to manage and reuse yank history.
 
 - View yank history
 - Yank any item from history with `<CR>`
+- Close the history window with `q` or a toggle keybinding
 - Handles multiline yanks with truncation in the display
 
 ## Installation
@@ -54,7 +55,6 @@ vim.api.nvim_set_keymap(
 
 Contributions are welcome! Feel free to submit a pull request or file an issue.
 
-## Inspiration
+## Related Projects
 
-Inspiration for this plugins:
-[mbbill/undotree](https://github.com/mbbill/undotree)
+- [mbbill/undotree](https://github.com/mbbill/undotree): Inspiration for this project
