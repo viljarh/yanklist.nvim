@@ -10,34 +10,33 @@ local state = {
 local function format_lines(lines, max_width)
 	local formatted = {}
 	for _, line in ipairs(lines) do
-		-- Handle multiline yanks: only show the first line with "..."
+		-- Handles multiline yanks, only displays first line with ´...´ behind
 		local first_line = line:match("[^\r\n]+")
 		if line:find("\n") then
-			first_line = first_line .. "..." -- Indicate it's multiline
+			first_line = first_line .. "..."
 		end
 
-		-- Truncate if it exceeds max width
 		if #first_line > max_width then
 			table.insert(formatted, first_line:sub(1, max_width - 3) .. "...")
 		else
 			table.insert(formatted, first_line)
 		end
 
-		-- Add a separator below each entry
+		-- Separator between the lines
 		table.insert(formatted, string.rep("-", max_width))
 	end
 	return formatted
 end
 
--- Create a side panel window
+-- Create the window
 local function create_window(contents)
-	local buf = vim.api.nvim_create_buf(false, true) -- Create a new unlisted scratch buffer
+	local buf = vim.api.nvim_create_buf(false, true)
 
-	-- Define the dimensions for the side panel
-	local width = 50 -- Width of the side panel
-	local height = vim.o.lines - 4 -- Leave 2 lines of padding at top and bottom
-	local row = 2 -- Start 2 lines below the top
-	local col = 0 -- Align to the left edge
+	-- Side panel dimension
+	local width = 50
+	local height = vim.o.lines - 4
+	local row = 2
+	local col = 0
 
 	local opts = {
 		relative = "editor",
@@ -51,14 +50,11 @@ local function create_window(contents)
 
 	local win = vim.api.nvim_open_win(buf, true, opts)
 
-	-- Format lines for better readability
 	local max_line_width = width - 2
 	local formatted_contents = format_lines(contents, max_line_width)
 
-	-- Populate the buffer with formatted contents
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, formatted_contents)
 
-	-- Set buffer-local options
 	vim.bo[buf].modifiable = false
 	vim.bo[buf].buftype = "nofile"
 	vim.bo[buf].swapfile = false
@@ -66,7 +62,7 @@ local function create_window(contents)
 	return buf, win
 end
 
--- Toggle the yank history panel
+-- Toggle the yank list panel
 function M.toggle_history()
 	if state.win and vim.api.nvim_win_is_valid(state.win) then
 		vim.api.nvim_win_close(state.win, true)
@@ -96,7 +92,7 @@ function M.toggle_history()
 		{ noremap = true, silent = true }
 	)
 
-	-- Allow the user to select an item to yank
+	-- Allow the user to select an item to yank, default key is Enter
 	vim.api.nvim_buf_set_keymap(
 		buf,
 		"n",
@@ -119,7 +115,7 @@ function M.select_item()
 		return
 	end
 
-	vim.fn.setreg('"', line) -- Set the default register to the selected line
+	vim.fn.setreg('"', line)
 	vim.api.nvim_win_close(state.win, true)
 	vim.notify("Yanked: " .. line)
 	state.buf = nil
