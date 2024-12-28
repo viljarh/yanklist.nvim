@@ -1,27 +1,43 @@
 local M = {}
 
+-- State to manage the floating window and buffer
 local state = {
 	buf = nil,
 	win = nil,
 }
 
--- Create a window
-local function create_window(contents)
-	local truncated_contents = {}
-	for _, item in ipairs(contents) do
-		local first_line = item:match("^[^\n]*") or ""
-		if #item > #first_line then
-			first_line = first_line .. " ..."
+-- Format lines for better readability
+local function format_lines(lines, max_width)
+	local formatted = {}
+	for _, line in ipairs(lines) do
+		-- Handle multiline yanks: only show the first line with "..."
+		local first_line = line:match("[^\r\n]+")
+		if line:find("\n") then
+			first_line = first_line .. "..." -- Indicate it's multiline
 		end
-		table.insert(truncated_contents, first_line)
+
+		-- Truncate if it exceeds max width
+		if #first_line > max_width then
+			table.insert(formatted, first_line:sub(1, max_width - 3) .. "...")
+		else
+			table.insert(formatted, first_line)
+		end
+
+		-- Add a separator below each entry
+		table.insert(formatted, string.rep("-", max_width))
 	end
+	return formatted
+end
 
-	local buf = vim.api.nvim_create_buf(false, true)
+-- Create a side panel window
+local function create_window(contents)
+	local buf = vim.api.nvim_create_buf(false, true) -- Create a new unlisted scratch buffer
 
-	local width = 50
-	local height = math.min(#contents, 20)
-	local row = math.floor((vim.o.lines - height) / 2)
-	local col = math.floor((vim.o.columns - width) / 2)
+	-- Define the dimensions for the side panel
+	local width = 50 -- Width of the side panel
+	local height = vim.o.lines - 4 -- Leave 2 lines of padding at top and bottom
+	local row = 2 -- Start 2 lines below the top
+	local col = 0 -- Align to the left edge
 
 	local opts = {
 		relative = "editor",
@@ -35,8 +51,14 @@ local function create_window(contents)
 
 	local win = vim.api.nvim_open_win(buf, true, opts)
 
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, truncated_contents)
+	-- Format lines for better readability
+	local max_line_width = width - 2
+	local formatted_contents = format_lines(contents, max_line_width)
 
+	-- Populate the buffer with formatted contents
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, formatted_contents)
+
+	-- Set buffer-local options
 	vim.bo[buf].modifiable = false
 	vim.bo[buf].buftype = "nofile"
 	vim.bo[buf].swapfile = false
@@ -44,7 +66,7 @@ local function create_window(contents)
 	return buf, win
 end
 
--- toggle yank history in a window
+-- Toggle the yank history panel
 function M.toggle_history()
 	if state.win and vim.api.nvim_win_is_valid(state.win) then
 		vim.api.nvim_win_close(state.win, true)
@@ -65,7 +87,7 @@ function M.toggle_history()
 	state.buf = buf
 	state.win = win
 
-	-- close window with q
+	-- Allow the user to close the panel with "q"
 	vim.api.nvim_buf_set_keymap(
 		buf,
 		"n",
@@ -74,7 +96,7 @@ function M.toggle_history()
 		{ noremap = true, silent = true }
 	)
 
-	-- press enter to yank item from the list
+	-- Allow the user to select an item to yank
 	vim.api.nvim_buf_set_keymap(
 		buf,
 		"n",
@@ -89,19 +111,19 @@ function M.select_item()
 	if not state.buf then
 		return
 	end
+	local line = vim.api.nvim_get_current_line()
 
-	local line_number = vim.api.nvim_win_get_cursor(0)[1] -- 1-based index
-	local core = require("yanklist.core")
-	local full_history = core.get_history()
-
-	local selected_item = full_history[line_number]
-	if selected_item then
-		vim.fn.setreg('"', selected_item)
-		vim.api.nvim_win_close(state.win, true)
-		vim.notify("Yanked: " .. selected_item:sub(1, 50) .. (selected_item:len() > 50 and " ..." or ""))
-		state.buf = nil
-		state.win = nil
+	-- Ignore separator lines when selecting
+	if line:match("^%-%-$") then
+		vim.notify("Cannot select a separator line!")
+		return
 	end
+
+	vim.fn.setreg('"', line) -- Set the default register to the selected line
+	vim.api.nvim_win_close(state.win, true)
+	vim.notify("Yanked: " .. line)
+	state.buf = nil
+	state.win = nil
 end
 
 return M
