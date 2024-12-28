@@ -56,5 +56,5 @@ Contributions are welcome! Feel free to submit a pull request or file an issue.
 
 ## Inspiration
 
-Inspirations for this plugins:
+Inspiration for this plugins:
 [mbbill/undotree](https://github.com/mbbill/undotree)
