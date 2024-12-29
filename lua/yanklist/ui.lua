@@ -9,19 +9,19 @@ local state = {
 
 -- Create a side panel window
 local function create_side_panel(contents)
-	-- Preprocess and truncate multiline yanks for display
+	-- Process yank history for display
 	local processed_contents = {}
 	state.map = {}
 	for _, item in ipairs(contents) do
-		-- Split multiline yank into individual lines
+		-- Split multiline yanks into lines
 		local lines = vim.split(item, "\n", { plain = true })
 		if #lines > 1 then
-			-- Truncate multiline yank to the first line with "..." appended
+			-- Show the first line with "..." if its multiline
 			local truncated = lines[1]:gsub("^%s+", "") .. " ..."
 			table.insert(processed_contents, truncated)
 			state.map[truncated] = item
 		else
-			-- Use single-line yanks as-is, with trimming
+			-- Add single line yanks directly
 			local single_line = lines[1]:gsub("^%s+", "")
 			table.insert(processed_contents, single_line)
 			state.map[single_line] = item
@@ -30,7 +30,7 @@ local function create_side_panel(contents)
 		table.insert(processed_contents, "---")
 	end
 
-	-- If the window already exists, reuse it
+	-- If the side panel is already open, update it
 	if state.win and vim.api.nvim_win_is_valid(state.win) then
 		vim.api.nvim_set_current_win(state.win)
 		vim.bo[state.buf].modifiable = true
@@ -41,15 +41,13 @@ local function create_side_panel(contents)
 
 	-- Create a new buffer for the side panel
 	local buf = vim.api.nvim_create_buf(false, true)
-
-	-- Open a vertical split for the side panel
 	vim.cmd("topleft vertical 30vsplit")
 	local win = vim.api.nvim_get_current_win()
 
 	-- Attach the buffer to the new window
 	vim.api.nvim_win_set_buf(win, buf)
 
-	-- Configure buffer and window options
+	-- Configure buffer and window
 	vim.bo[buf].modifiable = true
 	vim.bo[buf].buftype = "nofile"
 	vim.bo[buf].swapfile = false
@@ -57,13 +55,12 @@ local function create_side_panel(contents)
 	vim.wo[win].number = false
 	vim.wo[win].relativenumber = false
 
-	-- Populate the buffer with truncated yank history and separators
+	-- Fill the buffer with processed contents
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, processed_contents)
-
-	-- Make the buffer non-modifiable after populating
+	-- Make it read-only
 	vim.bo[buf].modifiable = false
 
-	-- Save the buffer and window IDs in the state
+	-- Save the buffer and window IDs in state
 	state.buf = buf
 	state.win = win
 
@@ -116,15 +113,17 @@ function M.select_item()
 	if not state.buf then
 		return
 	end
+
+	-- Get the selected line
 	local line = vim.api.nvim_get_current_line()
 
-	-- Checks if its a separator
+	-- Do nothing if the line is a separator
 	if line == "---" then
 		vim.notify("Cannot yank a separator", vim.log.levels.WARN)
 		return
 	end
 
-	-- Retrieve the full content from the mapping
+	-- Get the full content for the selected line
 	local full_content = state.map[line] or line
 
 	-- Yank the full content
