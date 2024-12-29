@@ -99,7 +99,7 @@ function M.select_item()
 	vim.fn.setreg("0", line)
 	vim.fn.setreg("+", line)
 
-	-- close sidepanel after yanking
+	-- Close sidepanel after yanking
 	vim.api.nvim_win_close(state.win, true)
 	vim.notify("Yanked: " .. line)
 	state.buf = nil
