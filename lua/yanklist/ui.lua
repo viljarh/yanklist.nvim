@@ -9,21 +9,18 @@ local state = {
 
 -- Create a side panel window
 local function create_side_panel(contents)
-	-- Preprocess contents to truncate multiline yanks
+	-- Truncate multiline yanks
 	local processed_contents = {}
 	state.map = {} -- Reset the map
 	for _, item in ipairs(contents) do
-		-- Split multiline yank into lines
 		local lines = vim.split(item, "\n", { plain = true })
 		if #lines > 1 then
-			-- If multiline, show the first line with "..." appended
 			local truncated = lines[1] .. " ..."
 			table.insert(processed_contents, truncated)
-			state.map[truncated] = item -- Map truncated content to full content
+			state.map[truncated] = item
 		else
-			-- Otherwise, use the single line as-is
 			table.insert(processed_contents, lines[1])
-			state.map[lines[1]] = item -- Map single-line content
+			state.map[lines[1]] = item
 		end
 	end
 
