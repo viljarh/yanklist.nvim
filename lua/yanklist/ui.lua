@@ -1,76 +1,63 @@
 local M = {}
 
--- State to manage the floating window and buffer
+-- State to manage the side panel
 local state = {
 	buf = nil,
 	win = nil,
 }
 
--- Format lines for better readability
-local function format_lines(lines, max_width)
-	local formatted = {}
-	for _, line in ipairs(lines) do
-		-- Handles multiline yanks, only displays first line with ´...´ behind
-		local first_line = line:match("[^\r\n]+")
-		if line:find("\n") then
-			first_line = first_line .. "..."
-		end
-
-		if #first_line > max_width then
-			table.insert(formatted, first_line:sub(1, max_width - 3) .. "...")
-		else
-			table.insert(formatted, first_line)
-		end
-
-		-- Separator between the lines
-		table.insert(formatted, string.rep("-", max_width))
+-- Create a side panel window
+local function create_side_panel(contents)
+	-- If the window already exists, reuse it
+	if state.win and vim.api.nvim_win_is_valid(state.win) then
+		vim.api.nvim_set_current_win(state.win)
+		vim.bo[state.buf].modifiable = true
+		vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, contents)
+		vim.bo[state.buf].modifiable = false
+		return state.buf, state.win
 	end
-	return formatted
-end
 
--- Create the window
-local function create_window(contents)
+	-- Create a new buffer
 	local buf = vim.api.nvim_create_buf(false, true)
 
-	-- Side panel dimension
-	local width = 50
-	local height = vim.o.lines - 4
-	local row = 2
-	local col = 0
+	-- Open a vertical split
+	vim.cmd("topleft vertical 30vsplit")
+	local win = vim.api.nvim_get_current_win()
 
-	local opts = {
-		relative = "editor",
-		width = width,
-		height = height,
-		row = row,
-		col = col,
-		style = "minimal",
-		border = "single",
-	}
+	-- Set the buffer to the split
+	vim.api.nvim_win_set_buf(win, buf)
 
-	local win = vim.api.nvim_open_win(buf, true, opts)
-
-	local max_line_width = width - 2
-	local formatted_contents = format_lines(contents, max_line_width)
-
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, formatted_contents)
-
-	vim.bo[buf].modifiable = false
+	-- Set window and buffer options
+	vim.bo[buf].modifiable = true
 	vim.bo[buf].buftype = "nofile"
 	vim.bo[buf].swapfile = false
+	vim.wo[win].winfixwidth = true
+	vim.wo[win].number = false
+	vim.wo[win].relativenumber = false
+
+	-- Populate the buffer
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, contents)
+
+	vim.bo[buf].modifiable = false
+
+	-- Save state
+	state.buf = buf
+	state.win = win
 
 	return buf, win
 end
 
--- Toggle the yank list panel
-function M.toggle_history()
+-- Toggle the side panel
+function M.toggle_side_panel()
+	-- If the window is already open, close it
 	if state.win and vim.api.nvim_win_is_valid(state.win) then
 		vim.api.nvim_win_close(state.win, true)
-		state.win = nil
 		state.buf = nil
+		state.win = nil
 		return
 	end
 
+	-- Load yank history
 	local core = require("yanklist.core")
 	local history = core.get_history()
 
@@ -79,25 +66,24 @@ function M.toggle_history()
 		return
 	end
 
-	local buf, win = create_window(history)
-	state.buf = buf
-	state.win = win
+	-- Create the side panel
+	create_side_panel(history)
 
-	-- Allow the user to close the panel with "q"
+	-- Allow the user to close the panel with `q`
 	vim.api.nvim_buf_set_keymap(
-		buf,
+		state.buf,
 		"n",
 		"q",
-		[[<cmd>lua require("yanklist.ui").toggle_history()<CR>]],
+		"<cmd>lua require('yanklist.ui').toggle_side_panel()<CR>",
 		{ noremap = true, silent = true }
 	)
 
-	-- Allow the user to select an item to yank, default key is Enter
+	-- Allow the user to yank an item with `<CR>`
 	vim.api.nvim_buf_set_keymap(
-		buf,
+		state.buf,
 		"n",
 		"<CR>",
-		[[<cmd>lua require("yanklist.ui").select_item()<CR>]],
+		[[<cmd>lua require('yanklist.ui').select_item()<CR>]],
 		{ noremap = true, silent = true }
 	)
 end
@@ -109,13 +95,11 @@ function M.select_item()
 	end
 	local line = vim.api.nvim_get_current_line()
 
-	-- Ignore separator lines when selecting
-	if line:match("^%-%-$") then
-		vim.notify("Cannot select a separator line!")
-		return
-	end
-
 	vim.fn.setreg('"', line)
+	vim.fn.setreg("0", line)
+	vim.fn.setreg("+", line)
+
+	-- close sidepanel after yanking
 	vim.api.nvim_win_close(state.win, true)
 	vim.notify("Yanked: " .. line)
 	state.buf = nil
