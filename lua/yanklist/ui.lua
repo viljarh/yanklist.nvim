@@ -4,15 +4,34 @@ local M = {}
 local state = {
 	buf = nil,
 	win = nil,
+	map = {},
 }
 
 -- Create a side panel window
 local function create_side_panel(contents)
+	-- Preprocess contents to truncate multiline yanks
+	local processed_contents = {}
+	state.map = {} -- Reset the map
+	for _, item in ipairs(contents) do
+		-- Split multiline yank into lines
+		local lines = vim.split(item, "\n", { plain = true })
+		if #lines > 1 then
+			-- If multiline, show the first line with "..." appended
+			local truncated = lines[1] .. " ..."
+			table.insert(processed_contents, truncated)
+			state.map[truncated] = item -- Map truncated content to full content
+		else
+			-- Otherwise, use the single line as-is
+			table.insert(processed_contents, lines[1])
+			state.map[lines[1]] = item -- Map single-line content
+		end
+	end
+
 	-- If the window already exists, reuse it
 	if state.win and vim.api.nvim_win_is_valid(state.win) then
 		vim.api.nvim_set_current_win(state.win)
 		vim.bo[state.buf].modifiable = true
-		vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, contents)
+		vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, processed_contents)
 		vim.bo[state.buf].modifiable = false
 		return state.buf, state.win
 	end
@@ -36,7 +55,7 @@ local function create_side_panel(contents)
 	vim.wo[win].relativenumber = false
 
 	-- Populate the buffer
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, contents)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, processed_contents)
 
 	vim.bo[buf].modifiable = false
 
@@ -95,15 +114,20 @@ function M.select_item()
 	end
 	local line = vim.api.nvim_get_current_line()
 
-	vim.fn.setreg('"', line)
-	vim.fn.setreg("0", line)
-	vim.fn.setreg("+", line)
+	-- Retrieve the full content from the mapping
+	local full_content = state.map[line] or line
 
-	-- Close sidepanel after yanking
+	-- Yank the full content
+	vim.fn.setreg('"', full_content)
+	vim.fn.setreg("0", full_content)
+	vim.fn.setreg("+", full_content)
+
+	-- Close side panel after yanking
 	vim.api.nvim_win_close(state.win, true)
-	vim.notify("Yanked: " .. line)
+	vim.notify("Yanked: " .. (vim.split(full_content, "\n")[1] or full_content))
 	state.buf = nil
 	state.win = nil
+	state.map = nil
 end
 
 return M
