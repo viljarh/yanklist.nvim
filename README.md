@@ -8,6 +8,7 @@ Neovim plugin to manage and reuse yank history in a side panel.
 - Yank any item from history with `<CR>`
 - Close the yank list with `q` or a toggle keybinding
 - Handles multiline yanks with truncation in the display
+- **Default keybinding**: `<leader>yl` to toggle the yank list
 
 ## Installation
 
@@ -35,11 +36,19 @@ use {
 
 ## Usage
 
-- Open Yank List: Press `<leader>yl`
+- Open Yank List: Press `<leader>yl` (default keybinding)
 - Select an Item: Navigate to an item and press `<CR>` to yank it
 - Close the Window: Press `q` (inside the panel) or toggle with `<leader>yl`
 
-## Example keybinding
+## Custom Keybinding Example
+
+```lua
+require("yanklist").setup({
+    keymap = "<leader>yl" -- Replace with your keybinding
+})
+```
+
+Or, directly set keybinding using `vim.api.nvim_set_keymap`:
 
 ```lua
 vim.api.nvim_set_keymap(
