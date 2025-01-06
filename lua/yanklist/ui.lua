@@ -12,12 +12,24 @@ local function create_side_panel(contents)
 	-- Process yank history for display
 	local processed_contents = {}
 	state.map = {}
+
+	-- length for default side panel size
+	local max_length = 30
+
 	for _, item in ipairs(contents) do
 		-- Split multiline yanks into lines
 		local lines = vim.split(item, "\n", { plain = true })
-		if #lines > 1 then
-			-- Show the first line with "..." if its multiline
-			local truncated = lines[1]:gsub("^%s+", "") .. " ..."
+		-- if multiline truncate to show start and end
+		if #lines > 1 or #item > max_length then
+			local truncated
+			if #lines > 1 then
+				-- if mutiline show first and last line
+				truncated = lines[1]:gsub("^%s+", "") .. " ... " .. lines[#lines]:gsub("^%s+", "")
+			else
+				local start = item:sub(1, math.floor(max_length / 2))
+				local ending = item:sub(-math.floor(max_length / 2))
+				truncated = start .. " ... " .. ending
+			end
 			table.insert(processed_contents, truncated)
 			state.map[truncated] = item
 		else
@@ -106,6 +118,15 @@ function M.toggle_side_panel()
 		[[<cmd>lua require('yanklist.ui').select_item()<CR>]],
 		{ noremap = true, silent = true }
 	)
+
+	-- Preview of full yank content keymap
+	vim.api.nvim_buf_set_keymap(
+		state.buf,
+		"n",
+		"P",
+		[[<cmd>lua require('yanklist.ui').preview_full_content(vim.api.nvim_get_current_line())<CR>]],
+		{ noremap = true, silent = true }
+	)
 end
 
 -- Handle selecting an item
@@ -139,4 +160,58 @@ function M.select_item()
 	state.map = nil
 end
 
+function M.preview_full_content(line)
+	local full_content = state.map[line]
+	if not full_content then
+		return
+	end
+
+	local buf = vim.api.nvim_create_buf(false, true)
+	local width = math.min(80, vim.o.columns - 4)
+	local height = math.min(10, vim.o.lines - 4)
+	local opts = {
+		relative = "cursor",
+		row = 1,
+		col = 0,
+		width = width,
+		height = height,
+		style = "minimal",
+		border = "single",
+	}
+
+	local win = vim.api.nvim_open_win(buf, true, opts)
+
+	-- populate buffer with the full yank content
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(full_content, "\n"))
+
+	-- buffer options
+	vim.bo[buf].buftype = "nofile"
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].bufhidden = "wipe"
+
+	vim.api.nvim_buf_set_keymap(
+		buf,
+		"n",
+		"<ESC>",
+		"<cmd>lua vim.api.nvim_win_close(" .. win .. ", true)<CR>",
+		{ noremap = true, silent = true }
+	)
+
+	vim.api.nvim_buf_set_keymap(
+		buf,
+		"n",
+		"q",
+		"<cmd>lua vim.api.nvim_win_close(" .. win .. ", true)<CR>",
+		{ noremap = true, silent = true }
+	)
+
+	vim.api.nvim_create_autocmd("WinClosed", {
+		pattern = tostring(win),
+		callback = function()
+			if state.win and vim.api.nvim_win_is_valid(state.win) then
+				vim.api.nvim_set_current_win(state.win)
+			end
+		end,
+	})
+end
 return M
