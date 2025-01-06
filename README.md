@@ -6,8 +6,10 @@ Neovim plugin to manage and reuse yank history in a side panel.
 
 - View yank history in a side panel
 - Yank any item from history with `<CR>`
+- Preview the full content of a yank in a floating window with `P`
 - Close the yank list with `q` or a toggle keybinding
 - Handles multiline yanks with truncation in the display
+- Automatically restores focus to the side panel after previewing a yank
 
 ## Installation
 
@@ -37,6 +39,9 @@ use {
 
 - Open Yank List: Press `<leader>yl`
 - Select an Item: Navigate to an item and press `<CR>` to yank it
+- Preview a Yank: Press `P` to open a floating window showing the full content
+  - Close the floating window with `q` or `<ESC>`
+  - Focus automatically returns to the side panel after closing the floating window
 - Close the Window: Press `q` (inside the panel) or toggle with `<leader>yl`
 
 ## Example keybinding
