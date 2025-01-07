@@ -2,6 +2,19 @@
 
 Neovim plugin to manage and reuse yank history in a side panel.
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Using `lazy.nvim`](#using-lazynvim)
+  - [Using `packer.nvim`](#using-packernvim)
+- [Usage](#usage)
+- [Keybinding](#keybinding)
+  - [Default Keybinding](#default-keybinding)
+  - [Custom Keybinding](#custom-keybinding)
+- [Contributing](#contributing)
+- [Related Projects](#related-projects)
+
 ## Features
 
 - View yank history in a side panel
@@ -14,7 +27,9 @@ Neovim plugin to manage and reuse yank history in a side panel.
 
 ## Installation
 
-### Using `lazy.nvim`:
+<details>
+
+<summary>Using `lazy.nvim`</summary>
 
 ```lua
 {
@@ -25,7 +40,10 @@ Neovim plugin to manage and reuse yank history in a side panel.
 }
 ```
 
-### Using `packer.nvim`:
+</details>
+
+<details>
+<summary>Using `packer.nvim`</summary>
 
 ```lua
 use {
@@ -35,6 +53,8 @@ use {
     end,
 }
 ```
+
+</details>
 
 ## Usage
 
@@ -51,7 +71,7 @@ use {
 
 - By default, the plugin sets `<leader>yl` to toggle the yank list.
 
-### Custom Keybinding Example
+### Custom Keybinding
 
 If you'd like to set a custom keybinding, you can pass it to the `setup` function:
 
