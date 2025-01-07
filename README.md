@@ -6,8 +6,6 @@ Neovim plugin to manage and reuse yank history in a side panel.
 
 - [Features](#features)
 - [Installation](#installation)
-  - [Using `lazy.nvim`](#using-lazynvim)
-  - [Using `packer.nvim`](#using-packernvim)
 - [Usage](#usage)
 - [Keybinding](#keybinding)
   - [Default Keybinding](#default-keybinding)
@@ -81,8 +79,6 @@ require("yanklist").setup({
 })
 ```
 
-```
-
 ## Contributing
 
 Contributions are welcome! Feel free to submit a pull request or file an issue.
@@ -90,4 +86,3 @@ Contributions are welcome! Feel free to submit a pull request or file an issue.
 ## Related Projects
 
 - [mbbill/undotree](https://github.com/mbbill/undotree): Inspiration for this project
-```
