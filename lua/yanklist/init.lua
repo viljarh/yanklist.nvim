@@ -1,22 +1,21 @@
 local M = {}
 
 function M.setup(user_config)
-	require("yanklist.core").initialize()
+	local default_config = {
+		keymap = "<leader>yl",
+	}
 
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>yl",
-		"<cmd>lua require('yanklist.ui').toggle_side_panel()<CR>",
-		{ noremap = true, silent = true }
-	)
-	if user_config and user_config.keymap then
+	local config = vim.tbl_deep_extend("force", default_config, user_config or {})
+
+	if config.keymap then
 		vim.api.nvim_set_keymap(
 			"n",
-			user_config.keymap,
+			config.keymap,
 			"<cmd>lua require('yanklist.ui').toggle_side_panel()<CR>",
 			{ noremap = true, silent = true }
 		)
 	end
-end
 
+	require("yanklist.core").initialize()
+end
 return M

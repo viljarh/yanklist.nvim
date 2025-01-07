@@ -45,23 +45,22 @@ use {
   - Focus automatically returns to the side panel after closing the floating window
 - Close the Window: Press `q` (inside the panel) or toggle with `<leader>yl`
 
-## Custom Keybinding Example
+## Keybinding
+
+### Default keybinding
+
+- By default, the plugin sets `<leader>yl` to toggle the yank list.
+
+### Custom Keybinding Example
+
+If you'd like to set a custom keybinding, you can pass it to the `setup` function:
 
 ```lua
 require("yanklist").setup({
-    keymap = "<leader>yl" -- Replace with your keybinding
+    keymap = "<leader>yy" -- Replace with your keybinding
 })
 ```
 
-Or, directly set keybinding using `vim.api.nvim_set_keymap`:
-
-```lua
-vim.api.nvim_set_keymap(
-    "n",
-    "<leader>yl",
-    "<cmd>lua require('yanklist.ui').toggle_side_panel()<CR>",
-    { noremap = true, silent = true }
-)
 ```
 
 ## Contributing
@@ -71,3 +70,4 @@ Contributions are welcome! Feel free to submit a pull request or file an issue.
 ## Related Projects
 
 - [mbbill/undotree](https://github.com/mbbill/undotree): Inspiration for this project
+```
