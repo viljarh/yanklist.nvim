@@ -14,20 +14,22 @@ local function create_side_panel(contents)
 	state.map = {}
 
 	-- length for default side panel size
-	local max_length = 30
+	local default_width = 30
+	local width = state.win and vim.api.nvim_win_get_width(state.win) or default_width
+	state.separator = string.rep("─", math.max(width - 2, 0))
 
 	for _, item in ipairs(contents) do
 		-- Split multiline yanks into lines
 		local lines = vim.split(item, "\n", { plain = true })
 		-- if multiline truncate to show start and end
-		if #lines > 1 or #item > max_length then
+		if #lines > 1 or #item > default_width then
 			local truncated
 			if #lines > 1 then
 				-- if mutiline show first and last line
 				truncated = lines[1]:gsub("^%s+", "") .. " ... " .. lines[#lines]:gsub("^%s+", "")
 			else
-				local start = item:sub(1, math.floor(max_length / 2))
-				local ending = item:sub(-math.floor(max_length / 2))
+				local start = item:sub(1, math.floor(default_width / 2))
+				local ending = item:sub(-math.floor(default_width / 2))
 				truncated = start .. " ... " .. ending
 			end
 			table.insert(processed_contents, truncated)
@@ -39,7 +41,7 @@ local function create_side_panel(contents)
 			state.map[single_line] = item
 		end
 		-- Add separator below each line
-		table.insert(processed_contents, "---")
+		table.insert(processed_contents, state.separator)
 	end
 
 	-- If the side panel is already open, update it
@@ -138,12 +140,15 @@ function M.select_item()
 	-- Get the selected line
 	local line = vim.api.nvim_get_current_line()
 
-	-- Do nothing if the line is a separator
-	if line == "---" then
+	-- Dont yank separator
+	local function is_separator(candidate_line)
+		return candidate_line == state.separator
+	end
+
+	if is_separator(line) then
 		vim.notify("Cannot yank a separator", vim.log.levels.WARN)
 		return
 	end
-
 	-- Get the full content for the selected line
 	local full_content = state.map[line] or line
 
